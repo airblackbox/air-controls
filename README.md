@@ -117,7 +117,7 @@ export AIR_CONTROLS_DB=/path/to/events.db
 
 ## License
 
-MIT
+Apache 2.0
 
 ## Links
 
