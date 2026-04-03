@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "air-controls"
+version = "0.1.0"
+description = "See what your AI agents actually do. Runtime visibility, audit trails, and guardrails for LangChain, CrewAI, AutoGen, and custom agents."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    {name = "Jason Shotwell", email = "jason.j.shotwell@gmail.com"},
+]
+keywords = [
+    "ai", "agents", "monitoring", "observability", "visibility",
+    "langchain", "crewai", "autogen", "audit", "guardrails",
+    "eu-ai-act", "compliance", "airblackbox",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Monitoring",
+]
+[project.urls]
+Homepage = "https://airblackbox.ai"
+Repository = "https://github.com/airblackbox/air-controls"
+Issues = "https://github.com/airblackbox/air-controls/issues"
+
+[project.scripts]
+air-controls = "air_controls.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["air_controls*"]
