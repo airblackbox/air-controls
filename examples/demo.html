@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIR Controls - Agent Runtime Visibility</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: #0f0f0f;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00ff88;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 2px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 32px;
+            font-size: 14px;
+        }
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-label {
+            color: #888;
+        }
+
+        .stat-value {
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .verify-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #00ff88;
+        }
+
+        .verify-btn {
+            padding: 8px 16px;
+            background: #00ff88;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .verify-btn:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+            transform: scale(1.05);
+        }
+
+        .verify-btn.verifying {
+            animation: verifying 1s ease-in-out;
+        }
+
+        @keyframes verifying {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Agent Cards */
+        .agents-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .agent-card {
+            background: #121212;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #00ff88, transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .agent-card:hover {
+            background: #161616;
+            border-color: #00ff88;
+            transform: translateY(-2px);
+        }
+
+        .agent-card:hover::before {
+            opacity: 1;
+        }
+
+        .agent-card.active {
+            background: rgba(0, 255, 136, 0.05);
+            border-color: #00ff88;
+        }
+
+        .agent-card.active::before {
+            opacity: 1;
+        }
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+
+        .agent-name {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agent-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-langchain { background: #3b82f6; color: white; }
+        .badge-crewai { background: #8b5cf6; color: white; }
+        .badge-custom { background: #06b6d4; color: white; }
+
+        .badge-active {
+            background: #10b981;
+            color: white;
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-paused {
+            background: #ef4444;
+            color: white;
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .agent-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-item-label {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .stat-item-value {
+            color: #00ff88;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .agent-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn-small {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-small:hover {
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .btn-small.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .btn-small.danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* Timeline Section */
+        .timeline-section {
+            margin-bottom: 32px;
+        }
+        .timeline-container {
+            background: #121212;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #1a1a1a;
+            background: #0f0f0f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timeline-header-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #888;
+        }
+
+        .filter-badge {
+            font-size: 12px;
+            padding: 4px 12px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+            color: #00ff88;
+            display: none;
+        }
+
+        .filter-badge.active {
+            display: inline-block;
+        }
+        .timeline-events {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .timeline-events::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .timeline-events::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        .timeline-events::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .timeline-events::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        .event {
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+            animation: slideIn 0.4s ease-out;
+            cursor: pointer;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .event:hover {
+            background: rgba(0, 255, 136, 0.05);
+            border-left-color: #00ff88;
+        }
+
+        .event-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        .event-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .event-time {
+            color: #666;
+            font-size: 12px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            min-width: 60px;
+        }
+
+        .event-agent-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot-sales { background: #3b82f6; }
+        .dot-research { background: #8b5cf6; }
+        .dot-support { background: #06b6d4; }
+        .event-agent-name {
+            font-weight: 600;
+            font-size: 13px;
+            min-width: 100px;
+        }
+
+        .event-action-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+            margin-right: 8px;
+        }
+
+        .badge-llm_call { background: #3b82f6; color: white; }
+        .badge-tool_use { background: #8b5cf6; color: white; }
+        .badge-api_call { background: #f59e0b; color: white; }
+        .badge-decision { background: #10b981; color: white; }
+        .badge-error { background: #ef4444; color: white; }
+
+        .event-description {
+            color: #ccc;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .event-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+        .risk-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .risk-green { background: #10b981; }
+        .risk-yellow { background: #f59e0b; }
+        .risk-red { background: #ef4444; }
+
+        .event-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: #666;
+            min-width: 150px;
+            justify-content: flex-end;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Stats Panel */
+        .stats-section {
+            margin-bottom: 32px;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+        }
+
+        .chart-container {
+            background: #121212;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .chart-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #888;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 150px;
+            gap: 8px;
+        }
+
+        .bar {
+            flex: 1;
+            background: linear-gradient(180deg, #00ff88, rgba(0, 255, 136, 0.3));
+            border-radius: 4px 4px 0 0;
+            min-height: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .bar:hover {
+            filter: brightness(1.2);
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+        }
+        .stats-list {
+            background: #121212;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stats-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stats-item-label {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-item-value {
+            color: #00ff88;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* Code Snippet */
+        .code-section {
+            margin-bottom: 32px;
+        }
+
+        .code-container {
+            background: #121212;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .code-header {
+            padding: 16px 20px;
+            background: #0f0f0f;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .code-header:hover {
+            background: #161616;
+        }
+
+        .code-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .code-toggle {
+            font-size: 12px;
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+
+        .code-toggle.open {
+            transform: rotate(180deg);
+        }
+
+        .code-content {
+            padding: 20px;
+            background: #0a0a0a;
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .code-content.open {
+            display: block;
+            max-height: 500px;
+        }
+
+        .code-block {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #ccc;
+            margin-bottom: 12px;
+            overflow-x: auto;
+        }
+
+        .code-keyword { color: #ff6b6b; }
+        .code-string { color: #00ff88; }
+        .code-function { color: #61dafb; }
+
+        .code-copy-btn {
+            padding: 8px 16px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .code-copy-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+        }
+        .code-copy-btn.copied {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 32px 24px;
+            color: #666;
+            font-size: 12px;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        .footer a {
+            color: #00ff88;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #00ff88;
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .agents-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .agents-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-stats {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head><body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">AIR Controls</div>
+            <div class="header-stats">
+                <div class="stat">
+                    <span class="stat-label">Agents:</span>
+                    <span class="stat-value" id="agentCount">3</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Events Today:</span>
+                    <span class="stat-value" id="eventCount">127</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="verify-badge" id="verifyBadge">
+                <span id="verifyText">VERIFIED ✓</span>
+            </div>
+            <button class="verify-btn" id="verifyBtn">Verify Chain</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Agents Section -->
+        <div class="agents-section">
+            <div class="section-title">Active Agents</div>
+            <div class="agents-grid">
+                <!-- Sales Bot -->
+                <div class="agent-card" data-agent="sales-bot">                    <div class="agent-header">
+                        <div class="agent-name">
+                            sales-bot
+                            <span class="agent-badge badge-langchain">LangChain</span>
+                        </div>
+                        <span class="badge-active" id="status-sales-bot">Active</span>
+                    </div>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <span class="stat-item-label">Events</span>
+                            <span class="stat-item-value" id="events-sales-bot">47</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-item-label">Cost</span>
+                            <span class="stat-item-value" id="cost-sales-bot">$0.23</span>
+                        </div>
+                    </div>
+                    <div class="agent-actions">
+                        <button class="btn-small" id="pause-sales-bot">Pause</button>
+                    </div>
+                </div>
+
+                <!-- Research Crew -->
+                <div class="agent-card" data-agent="research-crew">
+                    <div class="agent-header">
+                        <div class="agent-name">
+                            research-crew
+                            <span class="agent-badge badge-crewai">CrewAI</span>
+                        </div>
+                        <span class="badge-active" id="status-research-crew">Active</span>
+                    </div>                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <span class="stat-item-label">Events</span>
+                            <span class="stat-item-value" id="events-research-crew">63</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-item-label">Cost</span>
+                            <span class="stat-item-value" id="cost-research-crew">$1.47</span>
+                        </div>
+                    </div>
+                    <div class="agent-actions">
+                        <button class="btn-small" id="pause-research-crew">Pause</button>
+                    </div>
+                </div>
+
+                <!-- Support Bot -->
+                <div class="agent-card" data-agent="support-bot">
+                    <div class="agent-header">
+                        <div class="agent-name">
+                            support-bot
+                            <span class="agent-badge badge-custom">Custom</span>
+                        </div>
+                        <span class="badge-paused" id="status-support-bot">Paused</span>
+                    </div>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <span class="stat-item-label">Events</span>
+                            <span class="stat-item-value" id="events-support-bot">17</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-item-label">Cost</span>
+                            <span class="stat-item-value" id="cost-support-bot">$0.08</span>
+                        </div>                    </div>
+                    <div class="agent-actions">
+                        <button class="btn-small" id="pause-support-bot">Resume</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Section -->
+        <div class="timeline-section">
+            <div class="section-title">
+                Live Event Timeline
+                <span class="filter-badge" id="filterBadge">Filtering: <span id="filterName"></span></span>
+            </div>
+            <div class="timeline-container">
+                <div class="timeline-header">
+                    <span class="timeline-header-title">Real-time Agent Activity</span>
+                    <span class="filter-badge active" id="clearFilterBtn" style="display: none; cursor: pointer;">Clear Filter ✕</span>
+                </div>
+                <div class="timeline-events" id="timelineEvents"></div>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="stats-section">
+            <div class="chart-container">
+                <div class="chart-title">Events Per Hour (Last 8 Hours)</div>
+                <div class="chart" id="chart"></div>
+            </div>
+            <div class="stats-list">
+                <div class="stats-item">
+                    <span class="stats-item-label">Total Tokens</span>
+                    <span class="stats-item-value" id="totalTokens">12,847</span>
+                </div>                <div class="stats-item">
+                    <span class="stats-item-label">Total Cost</span>
+                    <span class="stats-item-value" id="totalCost">$1.78</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-item-label">Avg Response</span>
+                    <span class="stats-item-value" id="avgResponse">340ms</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Snippet Section -->
+        <div class="code-section">
+            <div class="code-container">
+                <div class="code-header" id="codeHeader">
+                    <span class="code-title">Integration Example</span>
+                    <span class="code-toggle" id="codeToggle">▼</span>
+                </div>
+                <div class="code-content" id="codeContent">
+                    <p style="color: #888; font-size: 12px; margin-bottom: 16px;">Add AIR Controls to your agent in 3 simple lines:</p>
+                    <div class="code-block"><span class="code-keyword">from</span> air_controls <span class="code-keyword">import</span> <span class="code-function">ControlsCallback</span>
+<span class="code-keyword">cb</span> = <span class="code-function">ControlsCallback</span>(agent_name=<span class="code-string">"sales-bot"</span>)
+chain.<span class="code-function">invoke</span>({<span class="code-string">"input"</span>: <span class="code-string">"..."</span>}, config={<span class="code-string">"callbacks"</span>: [cb]})</div>
+                    <button class="code-copy-btn" id="codeCopyBtn">Copy Code</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>AIR Controls • See what your AI agents actually do • <a href="#">Learn More</a></p>
+    </div>
+
+    <script>
+        // Event Data
+        const eventTemplates = [
+            { agents: ['sales-bot'], types: ['llm_call'], descriptions: [
+                'Generated personalized follow-up email for lead #4521',
+                'Composed sales pitch for tech startup prospect',
+                'Drafted proposal email with custom pricing'
+            ]},
+            { agents: ['sales-bot'], types: ['tool_use'], descriptions: [                'Queried Salesforce CRM for open opportunities',
+                'Retrieved contact details from HubSpot',
+                'Logged activity to customer database'
+            ]},
+            { agents: ['research-crew'], types: ['llm_call'], descriptions: [
+                'Analyzed 3 research papers on transformer architectures',
+                'Summarized latest findings on LLM scaling laws',
+                'Compared performance metrics across models'
+            ]},
+            { agents: ['research-crew'], types: ['api_call'], descriptions: [
+                'Fetched academic papers from arXiv API',
+                'Retrieved metrics from ModelHub database',
+                'Queried scientific citation index'
+            ]},
+            { agents: ['support-bot'], types: ['decision'], descriptions: [
+                'Escalated ticket #892 to human agent — confidence too low',
+                'Routed complex refund request to supervisor',
+                'Flagged urgent security issue for escalation'
+            ]},
+            { agents: ['sales-bot', 'research-crew'], types: ['error'], descriptions: [
+                'Rate limit exceeded on external API',
+                'Timeout connecting to database service'
+            ]},
+        ];
+
+        const agentDotClasses = {
+            'sales-bot': 'dot-sales',
+            'research-crew': 'dot-research',
+            'support-bot': 'dot-support'
+        };
+
+        const riskScores = ['green', 'green', 'green', 'yellow', 'yellow', 'red'];
+
+        let events = [];
+        let filteredAgent = null;
+        let agentStates = {
+            'sales-bot': true,
+            'research-crew': true,
+            'support-bot': false
+        };
+        let totalEventCount = 127;
+        let tokenCount = 12847;
+        let costValue = 1.78;
+        // Initialize with pre-populated events
+        function initializeEvents() {
+            const now = new Date();
+            for (let i = 0; i < 15; i++) {
+                const timeOffset = i * 2;
+                const template = eventTemplates[Math.floor(Math.random() * eventTemplates.length)];
+                const agent = template.agents[Math.floor(Math.random() * template.agents.length)];
+                const type = template.types[Math.floor(Math.random() * template.types.length)];
+                const description = template.descriptions[Math.floor(Math.random() * template.descriptions.length)];
+
+                const eventTime = new Date(now - timeOffset * 1000);
+                events.unshift({
+                    time: eventTime,
+                    agent: agent,
+                    type: type,
+                    description: description,
+                    risk: riskScores[Math.floor(Math.random() * riskScores.length)],
+                    tokens: Math.floor(Math.random() * 2000) + 100,
+                    cost: (Math.random() * 0.5 + 0.01).toFixed(2)
+                });
+            }
+        }
+
+        // Format time
+        function formatTime(date) {
+            return date.toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        // Render timeline
+        function renderTimeline() {
+            const timeline = document.getElementById('timelineEvents');
+            timeline.innerHTML = '';
+
+            const eventsToShow = filteredAgent
+                ? events.filter(e => e.agent === filteredAgent)
+                : events;
+            eventsToShow.forEach(event => {
+                const eventEl = document.createElement('div');
+                eventEl.className = 'event';
+                eventEl.innerHTML = `
+                    <div class="event-row">
+                        <div class="event-left">
+                            <span class="event-time">${formatTime(event.time)}</span>
+                            <div class="event-agent-dot ${agentDotClasses[event.agent]}"></div>
+                            <span class="event-agent-name">${event.agent}</span>
+                            <span class="event-action-badge badge-${event.type}">${event.type.replace(/_/g, ' ').toUpperCase()}</span>
+                            <span class="event-description">${event.description}</span>
+                        </div>
+                        <div class="event-right">
+                            <div class="risk-dot risk-${event.risk}"></div>
+                            <div class="event-meta">
+                                <span class="meta-item">${event.tokens} tokens</span>
+                                <span class="meta-item">$${event.cost}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                timeline.appendChild(eventEl);
+            });
+        }
+
+        // Add new event
+        function addNewEvent() {
+            const template = eventTemplates[Math.floor(Math.random() * eventTemplates.length)];
+            const agent = template.agents[Math.floor(Math.random() * template.agents.length)];
+
+            // Don't add events for paused agents
+            if (!agentStates[agent]) return;
+
+            const type = template.types[Math.floor(Math.random() * template.types.length)];
+            const description = template.descriptions[Math.floor(Math.random() * template.descriptions.length)];
+            events.unshift({
+                time: new Date(),
+                agent: agent,
+                type: type,
+                description: description,
+                risk: riskScores[Math.floor(Math.random() * riskScores.length)],
+                tokens: Math.floor(Math.random() * 2000) + 100,
+                cost: (Math.random() * 0.5 + 0.01).toFixed(2)
+            });
+
+            // Keep only last 50 events
+            if (events.length > 50) events.pop();
+
+            // Update stats
+            totalEventCount++;
+            tokenCount += parseInt(events[0].tokens);
+            costValue += parseFloat(events[0].cost);
+
+            document.getElementById('eventCount').textContent = totalEventCount;
+            document.getElementById('totalTokens').textContent = tokenCount.toLocaleString();
+            document.getElementById('totalCost').textContent = '$' + costValue.toFixed(2);
+
+            // Update agent event counts
+            const agentCounts = { 'sales-bot': 0, 'research-crew': 0, 'support-bot': 0 };
+            events.forEach(e => agentCounts[e.agent]++);
+            Object.keys(agentCounts).forEach(agent => {
+                document.getElementById(`events-${agent}`).textContent = agentCounts[agent];
+            });
+
+            renderTimeline();
+
+            // Scroll to top
+            document.getElementById('timelineEvents').scrollTop = 0;
+        }
+        // Agent card clicks
+        document.querySelectorAll('.agent-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const agent = card.dataset.agent;
+
+                // Toggle filter
+                if (filteredAgent === agent) {
+                    filteredAgent = null;
+                    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+                    document.getElementById('filterBadge').classList.remove('active');
+                    document.getElementById('clearFilterBtn').style.display = 'none';
+                } else {
+                    filteredAgent = agent;
+                    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    document.getElementById('filterBadge').classList.add('active');
+                    document.getElementById('filterName').textContent = agent;
+                    document.getElementById('clearFilterBtn').style.display = 'inline-block';
+                }
+
+                renderTimeline();
+            });
+        });
+
+        // Clear filter
+        document.getElementById('clearFilterBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            filteredAgent = null;
+            document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+            document.getElementById('filterBadge').classList.remove('active');
+            document.getElementById('clearFilterBtn').style.display = 'none';
+            renderTimeline();
+        });
+
+        // Pause/Resume buttons
+        document.querySelectorAll('[id^="pause-"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const agentName = btn.id.replace('pause-', '');
+                agentStates[agentName] = !agentStates[agentName];
+                const statusEl = document.getElementById(`status-${agentName}`);
+                const card = document.querySelector(`[data-agent="${agentName}"]`);
+
+                if (agentStates[agentName]) {
+                    btn.textContent = 'Pause';
+                    statusEl.textContent = 'Active';
+                    statusEl.className = 'badge-active';
+                    card.style.opacity = '1';
+                } else {
+                    btn.textContent = 'Resume';
+                    statusEl.textContent = 'Paused';
+                    statusEl.className = 'badge-paused';
+                    card.style.opacity = '0.6';
+                }
+            });
+        });
+
+        // Verify Chain button
+        document.getElementById('verifyBtn').addEventListener('click', () => {
+            const btn = document.getElementById('verifyBtn');
+            const badge = document.getElementById('verifyBadge');
+
+            btn.classList.add('verifying');
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.classList.remove('verifying');
+                badge.style.animation = 'pulse 0.3s ease-in-out';
+
+                setTimeout(() => {
+                    badge.style.animation = '';
+                    btn.disabled = false;
+                }, 300);
+            }, 1000);
+        });
+
+        // Code snippet toggle
+        document.getElementById('codeHeader').addEventListener('click', () => {
+            const content = document.getElementById('codeContent');
+            const toggle = document.getElementById('codeToggle');
+
+            content.classList.toggle('open');
+            toggle.classList.toggle('open');
+        });
+        // Copy code
+        document.getElementById('codeCopyBtn').addEventListener('click', () => {
+            const code = `from air_controls import ControlsCallback
+cb = ControlsCallback(agent_name="sales-bot")
+chain.invoke({"input": "..."}, config={"callbacks": [cb]})`;
+
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.getElementById('codeCopyBtn');
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+
+                setTimeout(() => {
+                    btn.textContent = 'Copy Code';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        });
+
+        // Initialize chart
+        function updateChart() {
+            const chartEl = document.getElementById('chart');
+            chartEl.innerHTML = '';
+
+            const hours = [
+                { hour: '0:00', count: 12 },
+                { hour: '2:00', count: 18 },
+                { hour: '4:00', count: 24 },
+                { hour: '6:00', count: 31 },
+                { hour: '8:00', count: 27 },
+                { hour: '10:00', count: 33 },
+                { hour: '12:00', count: 28 },
+                { hour: '14:00', count: 19 }
+            ];
+
+            const maxCount = 35;
+
+            hours.forEach(item => {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = (item.count / maxCount * 100) + '%';
+                bar.innerHTML = `<span class="bar-label">${item.hour}</span>`;
+                bar.title = `${item.count} events`;
+                chartEl.appendChild(bar);
+            });
+        }
+
+        // Initialize
+        initializeEvents();
+        renderTimeline();
+        updateChart();
+
+        // Add new events periodically
+        setInterval(addNewEvent, 1500);
+    </script>
+</body>
+</html>
