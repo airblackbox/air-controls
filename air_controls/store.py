@@ -88,7 +88,8 @@ class EventStore:
                 timestamp       TEXT NOT NULL,
                 action_type     TEXT NOT NULL,
                 raw_action      TEXT,
-                human_summary   TEXT,                input_data      TEXT,
+                human_summary   TEXT,
+                input_data      TEXT,
                 output_data     TEXT,
                 tokens_used     INTEGER DEFAULT 0,
                 cost_usd        REAL DEFAULT 0.0,
@@ -118,7 +119,8 @@ class EventStore:
                 FOREIGN KEY (agent_id) REFERENCES agents(id)
             );
 
-            CREATE TABLE IF NOT EXISTS baselines (                agent_id        TEXT NOT NULL,
+            CREATE TABLE IF NOT EXISTS baselines (
+                agent_id        TEXT NOT NULL,
                 metric          TEXT NOT NULL,
                 avg_7d          REAL DEFAULT 0.0,
                 stddev_7d       REAL DEFAULT 0.0,
@@ -182,7 +184,8 @@ class EventStore:
         timestamp = _now_iso()
 
         # Build chain hash
-        event_data = f"{event_id}:{agent_id}:{action_type}:{timestamp}"        chain_hash = _compute_chain_hash(self._last_hash, event_data)
+        event_data = f"{event_id}:{agent_id}:{action_type}:{timestamp}"
+        chain_hash = _compute_chain_hash(self._last_hash, event_data)
         self._last_hash = chain_hash
 
         self.conn.execute(
@@ -262,6 +265,7 @@ class EventStore:
             (agent_id,),
         ).fetchone()
         return dict(row) if row else {}
+
     def pause_agent(self, agent_id: str):
         """Pause an agent (kill switch)."""
         self.conn.execute(

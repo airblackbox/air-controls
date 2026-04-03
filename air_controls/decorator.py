@@ -28,7 +28,8 @@ class MonitorContext:
     def __init__(self, agent_name: str, framework: str = "custom",
                  db_path: Optional[str] = None, verbose: bool = False):
         self.agent_name = agent_name
-        self.agent_id = agent_name.lower().replace(" ", "-")        self.framework = framework
+        self.agent_id = agent_name.lower().replace(" ", "-")
+        self.framework = framework
         self.verbose = verbose
         self.store = EventStore(db_path)
         self.store.ensure_agent(self.agent_id, agent_name, framework)
@@ -54,7 +55,8 @@ class MonitorContext:
                 risk_score="high",
             )
             if self.verbose:
-                print(f"[AIR Controls] '{self.agent_name}' errored after {duration}ms")        else:
+                print(f"[AIR Controls] '{self.agent_name}' errored after {duration}ms")
+        else:
             self.store.log_event(
                 agent_id=self.agent_id,
                 action_type="session_end",
@@ -82,7 +84,8 @@ class MonitorContext:
 
         Returns the event ID.
         """
-        event_id = self.store.log_event(            agent_id=self.agent_id,
+        event_id = self.store.log_event(
+            agent_id=self.agent_id,
             action_type=action_type,
             raw_action=raw_action,
             human_summary=human_summary,
@@ -111,7 +114,8 @@ class _MonitorProxy:
     """
 
     def __init__(self, agent_name: str, framework: str = "custom",
-                 db_path: Optional[str] = None, verbose: bool = False):        self._agent_name = agent_name
+                 db_path: Optional[str] = None, verbose: bool = False):
+        self._agent_name = agent_name
         self._framework = framework
         self._db_path = db_path
         self._verbose = verbose
@@ -174,7 +178,9 @@ class _MonitorProxy:
 
     def __enter__(self):
         self._ctx = self._make_ctx()
-        return self._ctx.__enter__()    def __exit__(self, *args):
+        return self._ctx.__enter__()
+
+    def __exit__(self, *args):
         if self._ctx:
             return self._ctx.__exit__(*args)
         return False
